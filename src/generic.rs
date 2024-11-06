@@ -162,6 +162,12 @@ where
     fn capacity(&self) -> Option<U::NonZero> {
         U::maybe(self.fat, self.cap)
     }
+
+    /// Accessor for the underlying data
+    #[inline]
+    pub const fn get_raw_ptr(&self) -> NonNull<T::PointerT> {
+        self.ptr
+    }
 }
 
 impl<'a> Cow<'a, str, Wide> {
