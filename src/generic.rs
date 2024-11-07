@@ -175,6 +175,7 @@ where
     T: Beef + ?Sized,
 {
     /// Returns `true` if the contained data is empty
+    #[inline]
     pub const fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -204,6 +205,7 @@ where
     T: Beef + ?Sized,
 {
     /// Returns `true` if the contained data is empty
+    #[inline]
     pub const fn is_empty(&self) -> bool {
         self.len() == 0
     }
