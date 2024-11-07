@@ -95,7 +95,7 @@ where
     pub fn into_owned(self) -> T::Owned {
         let cow = ManuallyDrop::new(self);
 
-        match cow.get_capacity() {
+        match cow.capacity() {
             Some(capacity) => unsafe { T::owned_from_parts::<U>(cow.ptr, cow.fat, capacity) },
             None => unsafe { &*T::ref_from_parts::<U>(cow.ptr, cow.fat) }.to_owned(),
         }
@@ -106,7 +106,7 @@ where
     /// Panics: If the data is owned.
     #[inline]
     pub fn unwrap_borrowed(self) -> &'a T {
-        if self.get_capacity().is_some() {
+        if self.capacity().is_some() {
             panic!("Can not turn owned beef::Cow into a borrowed value")
         }
         unsafe { &*T::ref_from_parts::<U>(self.ptr, self.fat) }
@@ -129,7 +129,7 @@ where
     /// ```
     #[inline]
     pub fn is_borrowed(&self) -> bool {
-        self.get_capacity().is_none()
+        self.capacity().is_none()
     }
 
     /// Returns `true` if data is owned and has non-0 capacity.
@@ -149,7 +149,7 @@ where
     /// ```
     #[inline]
     pub fn is_owned(&self) -> bool {
-        self.get_capacity().is_some()
+        self.capacity().is_some()
     }
 
     /// Internal convenience method for casting `ptr` into a `&T`
@@ -159,7 +159,7 @@ where
     }
 
     #[inline]
-    fn get_capacity(&self) -> Option<U::NonZero> {
+    fn capacity(&self) -> Option<U::NonZero> {
         U::maybe(self.fat, self.cap)
     }
 
@@ -185,20 +185,6 @@ where
     pub const fn len(&self) -> usize {
         self.fat
     }
-
-    /// Returns capacity of underlying data
-    #[inline]
-    pub const fn capacity(&self) -> Option<usize> {
-        if self.cap.is_some() {
-            Some(unsafe {
-                // SAFETY: Transmute from Option<NonZero<usize>> to usize is
-                // sound by definition.
-                core::mem::transmute::<Option<core::num::NonZero<usize>>, usize>(self.cap)
-            })
-        } else {
-            None
-        }
-    }
 }
 impl<'a, T> Cow<'a, T, Lean>
 where
@@ -214,17 +200,6 @@ where
     #[inline]
     pub const fn len(&self) -> usize {
         Lean::mask_len(self.fat)
-    }
-
-    /// Returns capacity of underlying data
-    #[inline]
-    pub const fn capacity(&self) -> Option<usize> {
-        let cap = Lean::mask_cap(self.fat);
-        if cap == 0 {
-            None
-        } else {
-            Some(cap)
-        }
     }
 }
 
@@ -434,7 +409,7 @@ where
 {
     #[inline]
     fn drop(&mut self) {
-        if let Some(capacity) = self.get_capacity() {
+        if let Some(capacity) = self.capacity() {
             unsafe { T::owned_from_parts::<U>(self.ptr, self.fat, capacity) };
         }
     }
@@ -447,7 +422,7 @@ where
 {
     #[inline]
     fn clone(&self) -> Self {
-        match self.get_capacity() {
+        match self.capacity() {
             Some(_) => Cow::owned(self.borrow().to_owned()),
             None => Cow { ..*self },
         }
@@ -512,7 +487,7 @@ where
     fn from(cow: Cow<'a, T, U>) -> Self {
         let cow = ManuallyDrop::new(cow);
 
-        match cow.get_capacity() {
+        match cow.capacity() {
             Some(capacity) => {
                 StdCow::Owned(unsafe { T::owned_from_parts::<U>(cow.ptr, cow.fat, capacity) })
             }

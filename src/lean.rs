@@ -26,10 +26,6 @@ impl Lean {
     pub const fn mask_len(len: usize) -> usize {
         len & MASK_LO
     }
-    #[inline]
-    pub const fn mask_cap(cap: usize) -> usize {
-        (cap & MASK_HI) >> 4
-    }
 }
 
 impl InternalCapacity for Lean {
