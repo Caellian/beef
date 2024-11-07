@@ -163,10 +163,58 @@ where
         U::maybe(self.fat, self.cap)
     }
 
-    /// Accessor for the underlying data
+    /// Returns a pointer to underlying data
     #[inline]
-    pub const fn get_raw_ptr(&self) -> NonNull<T::PointerT> {
+    pub const fn as_ptr(&self) -> NonNull<T::PointerT> {
         self.ptr
+    }
+}
+
+impl<'a, T> Cow<'a, T, Wide>
+where
+    T: Beef + ?Sized,
+{
+    /// Returns length of underlying data
+    #[inline]
+    pub const fn get_len(&self) -> usize {
+        self.fat
+    }
+
+    /// Returns capacity of underlying data
+    #[inline]
+    pub const fn get_capacity(&self) -> Option<usize> {
+        match self.cap {
+            Some(_) => unsafe {
+                // SAFETY: Transmute from Option<NonZero<usize>> to usize is
+                // sound by definition.
+                Some(core::mem::transmute::<
+                    Option<core::num::NonZero<usize>>,
+                    usize,
+                >(self.cap))
+            },
+            None => None,
+        }
+    }
+}
+impl<'a, T> Cow<'a, T, Lean>
+where
+    T: Beef + ?Sized,
+{
+    /// Returns length of underlying data
+    #[inline]
+    pub const fn get_len(&self) -> usize {
+        Lean::mask_len(self.fat)
+    }
+
+    /// Returns capacity of underlying data
+    #[inline]
+    pub const fn get_capacity(&self) -> Option<usize> {
+        let cap = Lean::mask_cap(self.fat);
+        if cap == 0 {
+            None
+        } else {
+            Some(cap)
+        }
     }
 }
 
