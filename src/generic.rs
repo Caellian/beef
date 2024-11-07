@@ -188,16 +188,14 @@ where
     /// Returns capacity of underlying data
     #[inline]
     pub const fn capacity(&self) -> Option<usize> {
-        match self.cap {
-            Some(_) => unsafe {
+        if self.cap.is_some() {
+            Some(unsafe {
                 // SAFETY: Transmute from Option<NonZero<usize>> to usize is
                 // sound by definition.
-                Some(core::mem::transmute::<
-                    Option<core::num::NonZero<usize>>,
-                    usize,
-                >(self.cap))
-            },
-            None => None,
+                core::mem::transmute::<Option<core::num::NonZero<usize>>, usize>(self.cap)
+            })
+        } else {
+            None
         }
     }
 }
